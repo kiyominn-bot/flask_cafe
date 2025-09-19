@@ -12,7 +12,6 @@ from flask import Flask, render_template,request, redirect, url_for, Response
 import sqlite3
 app = Flask(__name__)
 app.secret_key = "sunabaco" 
-app = Flask(__name__)
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import sqlite3
 from flask import flash
