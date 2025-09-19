@@ -1,3 +1,13 @@
+import os
+import sqlite3
+
+# データベースがなければ作成
+if not os.path.exists("cafe.db"):
+    conn = sqlite3.connect("cafe.db")
+    with open("schema.sql", "r", encoding="utf-8") as f:
+        conn.executescript(f.read())
+    conn.close()
+
 from flask import Flask, render_template,request, redirect, url_for, Response
 import sqlite3
 app = Flask(__name__)
