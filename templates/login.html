@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+</head>
+<body>
+    <h1>ログイン</h1>
+    <form method="POST">
+        <p>ユーザー名: <input type="text" name="username" required></p>
+        <p>パスワード: <input type="password" name="password" required></p>
+        <button type="submit">ログイン</button>
+ {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul>
+      {% for category, message in messages %}
+        <li style="color:red;">{{ message|safe }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+   
+</form>
+<p><a href="/reset_password">パスワードを忘れた方はこちら</a></p>
+
+<p>はじめての方は <a href="/register">新規登録はこちら</a></p>
+
+</body>
+</html>

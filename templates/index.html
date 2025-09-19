@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<p style="text-align:right;">
+  <a href="/logout">ログアウト</a>
+</p>
+
+<head>
+    <meta charset="UTF-8">
+    <title>在庫一覧</title>
+</head>
+<body>
+    <h1>在庫一覧</h1>
+<p>
+  <a href="/add_item">＋ 商品を追加</a> |
+  <a href="/add_purchase">📦 仕入れを登録</a>
+<a href="/purchase_history">📑 仕入れ履歴を見る</a>
+</p>
+
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>商品名</th>
+            <th>在庫数</th>
+             <th>最低在庫</th>
+<th>単位</th>
+            <th>仕入れ先</th>
+            <th>操作</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td style="color: {% if item.quantity < item.min_quantity %}red{% else %}black{% endif %};">
+               <form action="/update_quantity/{{ item.id }}/minus" method="POST" style="display:inline;">
+                   <button type="submit">−</button>
+               </form>
+                {{ item.quantity }}
+               <form action="/update_quantity/{{ item.id }}/plus" method="POST" style="display:inline;">
+                   <button type="submit">＋</button>
+               </form>
+            </td>
+            <td>{{ item.min_quantity }}</td>
+            <td>{{ item.unit }}</td>
+            <td>{{ item.supplier }}</td>
+            <td>
+              <form action="/delete_item/{{ item.id }}" method="POST" onsubmit="return confirm('本当に削除しますか？');">
+                 <button type="submit">削除</button>
+              </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

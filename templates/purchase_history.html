@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<p style="text-align:right;">
+  <a href="/logout">ログアウト</a>
+</p>
+
+<head>
+    <meta charset="UTF-8">
+    <title>仕入れ履歴</title>
+</head>
+<body>
+    <h1>過去1か月の仕入れ履歴</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>日付</th>
+            <th>商品名</th>
+            <th>数量</th>
+            <th>価格</th>
+            <th>仕入れ先</th>
+            <th>操作</th>
+        </tr>
+        {% for r in purchases %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.date }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.quantity }}</td>
+            <td>{{ r.price }}</td>
+            <td>{{ r.supplier }}</td>
+            <td>
+              <form method="POST" action="/delete_purchase/{{ r.id }}" onsubmit="return confirm('削除しますか？');">
+                <button type="submit">削除</button>
+              </form>
+            </td>
+ </tr>
+        {% endfor %}
+    </table>
+
+    <p><a href="/">← 在庫一覧に戻る</a></p>
+</body>
+</html>
