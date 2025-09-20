@@ -1,30 +1,27 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>新規ユーザー登録</title>
-</head>
-<body>
-    <h1>新規ユーザー登録</h1>
+{% extends "base.html" %}
 
-    <!-- flashメッセージ表示 -->
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+{% block title %}新規ユーザー登録{% endblock %}
 
-    <form method="POST">
-        <p>ユーザー名: <input type="text" name="username" required></p>
-        <p>パスワード: <input type="password" name="password" required></p>
-        <label>招待コード: <input type="text" name="invite_code" required></label><br>
-        <button type="submit">登録</button>
-    </form>
+{% block content %}
+  <h1>新規ユーザー登録</h1>
 
-    <p><a href="/login">← ログイン画面に戻る</a></p>
-</body>
-</html>
+  <!-- flashメッセージ表示 -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST">
+      <p>ユーザー名: <input type="text" name="username" required></p>
+      <p>パスワード: <input type="password" name="password" required></p>
+      <p>招待コード: <input type="text" name="invite_code" required></p>
+      <button type="submit">登録</button>
+  </form>
+
+  <p><a href="/login">← ログイン画面に戻る</a></p>
+{% endblock %}

@@ -1,19 +1,8 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>在庫一覧</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <div class="top-links">
-    <a href="/add_item">＋商品を追加</a>
-    <a href="/add_purchase">📦仕入れを登録</a>
-    <a href="/purchase_history">📑仕入れ履歴を見る</a>
-    <a href="/logout">ログアウト</a>
-  </div>
+{% extends "base.html" %}
 
+{% block title %}在庫一覧{% endblock %}
+
+{% block content %}
   <h1>在庫一覧</h1>
 
   {% for item in items %}
@@ -36,6 +25,4 @@
     </form>
   </div>
   {% endfor %}
-
-</body>
-</html>
+{% endblock %}

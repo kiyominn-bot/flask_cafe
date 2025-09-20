@@ -1,24 +1,17 @@
-<!DOCTYPE html>
-<html lang="ja">
-<p style="text-align:right;">
-  <a href="/logout">ログアウト</a>
-</p>
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>商品追加</title>
-</head>
-<body>
-    <h1>商品を追加する</h1>
-    <form method="POST">
-        <p>商品名: <input type="text" name="name" required></p>
-        <p>在庫数: <input type="number" name="quantity" value="0" required></p>
-        <p>単位: <input type="text" name="unit"></p>
-        <p>仕入れ先: <input type="text" name="supplier"></p>
-        <p>最低在庫: <input type="number" name="min_quantity" value="0" required></p>
- <p><button type="submit">登録</button></p>
-    </form>
+{% block title %}商品追加{% endblock %}
 
-    <p><a href="/">← 在庫一覧に戻る</a></p>
-</body>
-</html>
+{% block content %}
+  <h1>商品を追加する</h1>
+  <form method="POST">
+      <p>商品名: <input type="text" name="name" required></p>
+      <p>在庫数: <input type="number" name="quantity" value="0" required></p>
+      <p>単位: <input type="text" name="unit"></p>
+      <p>仕入れ先: <input type="text" name="supplier"></p>
+      <p>最低在庫: <input type="number" name="min_quantity" value="0" required></p>
+      <p><button type="submit">登録</button></p>
+  </form>
+
+  <p><a href="/">← 在庫一覧に戻る</a></p>
+{% endblock %}
