@@ -18,14 +18,25 @@ from flask import flash
 import datetime
 from datetime import date as dt_date
 
+INVITE_CODE = "sunabaco2025"  # ← 好きな文字列に変更してください
+
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
+        invite_code = request.form["invite_code"]
+
+        # 招待コードチェック
+        if invite_code != INVITE_CODE:
+            flash("招待コードが違います")
+            return redirect(url_for("register"))
+
         username = request.form["username"]
         password = request.form["password"]
+
         conn = sqlite3.connect("cafe.db")
         try:
-            conn.execute("INSERT INTO users (username,password) VALUES (?,?)",(username,password))
+            conn.execute("INSERT INTO users (username,password) VALUES (?,?)",
+                         (username,password))
             conn.commit()
             flash("登録しました。ログインしてください。")
             return redirect(url_for("login"))
@@ -33,6 +44,7 @@ def register():
             flash("そのユーザー名はすでに使われています")
         conn.close()
     return render_template("register.html")
+
 
 app.secret_key = "your_secret_key"  # ← 適当な文字列に変更してください
 
