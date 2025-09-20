@@ -59,3 +59,25 @@ button.minus {
   margin: 0 8px;
   font-size: 1.1em;
 }
+/* 共通ナビゲーションバー */
+.navbar {
+  background: #333;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;       /* スマホで折り返し */
+  gap: 10px;
+  justify-content: center;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: #555;
+  font-size: 1.1em;
+}
+
+.navbar a:hover {
+  background: #777;
+}
