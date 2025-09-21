@@ -81,3 +81,8 @@ button.minus {
 .navbar a:hover {
   background: #777;
 }
+/* 最低在庫を下回った時の赤色表示 */
+.low-stock {
+  color: red;
+  font-weight: bold;
+}

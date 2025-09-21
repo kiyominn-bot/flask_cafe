@@ -8,7 +8,9 @@
   {% for item in items %}
   <div class="item-card">
     <div class="item-name">{{ item.name }}</div>
-    <div class="quantity">在庫数：{{ item.quantity }} {{ item.unit }}</div>
+    <div class="quantity {% if item.quantity < item.min_quantity %}low-stock{% endif %}">
+      在庫数：{{ item.quantity }} {{ item.unit }}
+    </div>
     <div class="quantity">仕入れ先：{{ item.supplier }}</div>
     <div class="button-group">
       <form method="POST" action="/update_quantity/{{ item.id }}/minus">
