@@ -5,12 +5,25 @@
 {% block content %}
   <h1>商品を追加する</h1>
   <form method="POST">
-      <p>商品名: <input type="text" name="name" required></p>
-      <p>在庫数: <input type="number" name="quantity" value="0" required></p>
-      <p>単位: <input type="text" name="unit"></p>
-      <p>仕入れ先: <input type="text" name="supplier"></p>
-      <p>最低在庫: <input type="number" name="min_quantity" value="0" required></p>
-      <p><button type="submit">登録</button></p>
+    <label>商品名:</label>
+    <input type="text" name="name" required><br>
+
+    <label>数量:</label>
+    <input type="number" name="quantity" required><br>
+
+    <label>単位:</label>
+    <input type="text" name="unit" placeholder="枚 / 個 / 箱"><br>
+
+    <label>仕入れ先:</label>
+    <input type="text" name="supplier" placeholder="例: 今治タオル株式会社"><br>
+
+    <label>最低在庫数:</label>
+    <input type="number" name="min_quantity"><br>
+
+    <label>仕入れ価格:</label>
+    <input type="number" name="price" step="1" placeholder="円"><br>
+
+    <button type="submit">登録</button>    
   </form>
 
   <p><a href="/">← 在庫一覧に戻る</a></p>

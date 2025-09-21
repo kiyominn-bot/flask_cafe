@@ -6,6 +6,30 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import datetime
 from datetime import date as dt_date
 import secrets
+def run_migrations():
+    """
+    起動時に安全にスキーマ差分を当てる。
+    既に列があっても失敗しないよう IF NOT EXISTS を使う。
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # purchases に user_name 列が無ければ追加
+    cur.execute("""
+        ALTER TABLE IF EXISTS purchases
+        ADD COLUMN IF NOT EXISTS user_name TEXT
+    """)
+
+    # 念のため purchased_at も無ければ追加（保険）
+    cur.execute("""
+        ALTER TABLE IF EXISTS purchases
+        ADD COLUMN IF NOT EXISTS purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("✅ DB migrations applied (user_name / purchased_at)")
 
 # -----------------------------
 # 初期設定
@@ -175,20 +199,33 @@ def add_item():
         quantity = int(request.form["quantity"])
         unit = request.form["unit"]
         supplier = request.form["supplier"]
-        min_quantity = int(request.form["min_quantity"])
+        min_quantity = request.form["min_quantity"]
+        min_quantity = int(min_quantity) if min_quantity else None
+
+        # 仕入れ価格は空でもOKにする
+        price = request.form["price"]
+        price = int(price) if price else None
 
         conn = get_connection()
         cur = conn.cursor()
+        # 商品テーブルに追加
         cur.execute(
-            "INSERT INTO items (name, quantity, unit, supplier, min_quantity) VALUES (%s, %s, %s, %s, %s)",
+            "INSERT INTO items (name, quantity, unit, supplier, min_quantity) VALUES (%s, %s, %s, %s, %s) RETURNING id",
             (name, quantity, unit, supplier, min_quantity)
         )
+        item_id = cur.fetchone()[0]
+
+        # 仕入れ履歴も同時に記録
+        if price is not None:
+            cur.execute(
+                "INSERT INTO purchases (item_id, quantity, price) VALUES (%s, %s, %s)",
+                (item_id, quantity, price)
+            )
         conn.commit()
         conn.close()
         return redirect(url_for("index"))
     return render_template("add_item.html")
 
-# -----------------------------
 # 仕入れ履歴
 # -----------------------------
 @app.route("/purchase_history")
@@ -201,12 +238,12 @@ def purchase_history():
     thirty_days_ago = today - datetime.timedelta(days=30)
 
     cur.execute("""
-        SELECT purchases.id, purchases.date, items.name AS item_name, 
-               purchases.quantity, purchases.price, items.supplier, purchases.user_name
-        FROM purchases
-        JOIN items ON purchases.item_id = items.id
-        WHERE purchases.date >= %s
-        ORDER BY purchases.date DESC
+        SELECT p.id, p.purchased_at, i.name AS item_name, 
+               p.quantity, p.price, i.supplier, p.user_name
+        FROM purchases p
+        JOIN items i ON p.item_id = i.id
+        WHERE p.purchased_at >= %s
+        ORDER BY p.purchased_at DESC
     """, (thirty_days_ago,))
     records = cur.fetchall()
 
@@ -254,7 +291,7 @@ def add_purchase():
         if input_date == "":
             input_date = dt_date.today().isoformat()
         quantity = int(request.form["quantity"])
-        price = int(request.form["price"])
+        price = int(request.form["price"])if request.form["price"] else None
 
         # ユーザー名を一緒に保存
         cur.execute("""
@@ -351,5 +388,11 @@ def init_db():
 init_db()
 
 if __name__ == "__main__":
-    init_db()  # ←最初に一度だけテーブルを作る
+    try: 
+        init_db()  # ←最初に一度だけテーブルを作る
+    except NameError:
+        pass
+
+    # 追加: 差分適用（列追加）
+    run_migrations()
     app.run(debug=True)
