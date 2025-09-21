@@ -1,18 +1,25 @@
--- 商品（在庫）テーブル
-CREATE TABLE IF NOT EXISTS items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- 商品ID
-    name TEXT NOT NULL,                   -- 商品名
-    quantity INTEGER NOT NULL DEFAULT 0,  -- 在庫数
-    unit TEXT,                            -- 単位（個、本、g など）
-    supplier TEXT                         -- 仕入れ先
+-- ユーザーテーブル
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
 );
 
--- 仕入れ記録テーブル
-CREATE TABLE IF NOT EXISTS purchases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- 仕入れID
-    item_id INTEGER NOT NULL,             -- 紐づく商品ID
-    date TEXT NOT NULL,                   -- 仕入れ日
-    quantity INTEGER NOT NULL,            -- 仕入れ数量
-    price INTEGER,                         -- 仕入れ価格
-    FOREIGN KEY (item_id) REFERENCES items(id)
+-- 商品テーブル
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit TEXT,
+    supplier TEXT,
+    min_quantity INTEGER
+);
+
+-- 仕入れ履歴テーブル
+CREATE TABLE purchases (
+    id SERIAL PRIMARY KEY,
+    item_id INTEGER REFERENCES items(id) ON DELETE CASCADE,
+    quantity INTEGER NOT NULL,
+    price INTEGER,
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
