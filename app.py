@@ -1,5 +1,6 @@
 import os
-import sqlite3
+import psycopg2
+import psycopg2.extras
 from flask import Flask, render_template, request, redirect, url_for, Response, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import datetime
@@ -12,11 +13,54 @@ import secrets
 app = Flask(__name__)
 app.secret_key = "sunabaco"   # 任意の秘密鍵
 
-# データベースがなければ作成
-if not os.path.exists("cafe.db"):
-    conn = sqlite3.connect("cafe.db")
-    with open("schema.sql", "r", encoding="utf-8") as f:
-        conn.executescript(f.read())
+# Render に登録した DATABASE_URL を環境変数から取得
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def get_connection():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
+
+# -----------------------------
+# DB初期化
+# -----------------------------
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # ユーザーテーブル
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        reset_token TEXT
+    );
+    """)
+
+    # 在庫テーブル
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS items (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit TEXT,
+        supplier TEXT,
+        min_quantity INTEGER
+    );
+    """)
+
+    # 仕入れテーブル
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS purchases (
+        id SERIAL PRIMARY KEY,
+        item_id INTEGER REFERENCES items(id),
+        date DATE,
+        quantity INTEGER,
+        price INTEGER,
+        user_name TEXT
+    );
+    """)
+
+    conn.commit()
     conn.close()
 
 # 招待コード（初回登録用）
@@ -30,7 +74,6 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 login_manager.login_message = None
 
-
 class User(UserMixin):
     def __init__(self, id, username, password):
         self.id = id
@@ -39,10 +82,9 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    conn = sqlite3.connect('cafe.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cur.fetchone()
     conn.close()
     if user:
@@ -65,22 +107,22 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("cafe.db")
+        conn = get_connection()
+        cur = conn.cursor()
         try:
-            conn.execute("INSERT INTO users (username,password) VALUES (?,?)",
-                         (username,password))
+            cur.execute("INSERT INTO users (username,password) VALUES (%s,%s)", (username,password))
             conn.commit()
-            conn.close()
 
-            # 登録後にそのままログイン状態にする
-            user_id = conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+            # 登録後にそのままログイン
+            cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+            user_id = cur.fetchone()
             if user_id:
-                login_user(User(user_id[0], username, password))
+                login_user(User(user_id["id"], username, password))
                 flash("登録してログインしました！")
                 return redirect(url_for("index"))
-
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
             flash("そのユーザー名はすでに使われています")
+        finally:
             conn.close()
     return render_template("register.html")
 
@@ -92,10 +134,9 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        conn = sqlite3.connect('cafe.db')
-        conn.row_factory = sqlite3.Row
+        conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+        cur.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
         user = cur.fetchone()
         conn.close()
         if user:
@@ -116,8 +157,7 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    conn = sqlite3.connect("cafe.db")
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM items")
     items = cur.fetchall()
@@ -137,10 +177,10 @@ def add_item():
         supplier = request.form["supplier"]
         min_quantity = int(request.form["min_quantity"])
 
-        conn = sqlite3.connect('cafe.db')
+        conn = get_connection()
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO items (name, quantity, unit, supplier, min_quantity) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO items (name, quantity, unit, supplier, min_quantity) VALUES (%s, %s, %s, %s, %s)",
             (name, quantity, unit, supplier, min_quantity)
         )
         conn.commit()
@@ -154,8 +194,7 @@ def add_item():
 @app.route("/purchase_history")
 @login_required
 def purchase_history():
-    conn = sqlite3.connect('cafe.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cur = conn.cursor()
 
     today = datetime.date.today()
@@ -166,9 +205,9 @@ def purchase_history():
                purchases.quantity, purchases.price, items.supplier, purchases.user_name
         FROM purchases
         JOIN items ON purchases.item_id = items.id
-        WHERE purchases.date >= ?
+        WHERE purchases.date >= %s
         ORDER BY purchases.date DESC
-    """, (thirty_days_ago.isoformat(),))
+    """, (thirty_days_ago,))
     records = cur.fetchall()
 
     conn.close()
@@ -180,19 +219,18 @@ def purchase_history():
 @app.route("/delete_purchase/<int:purchase_id>", methods=["POST"])
 @login_required
 def delete_purchase(purchase_id):
-    conn = sqlite3.connect('cafe.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT item_id, quantity FROM purchases WHERE id = ?", (purchase_id,))
+    cur.execute("SELECT item_id, quantity FROM purchases WHERE id = %s", (purchase_id,))
     purchase = cur.fetchone()
 
     if purchase:
         item_id = purchase["item_id"]
         quantity = purchase["quantity"]
 
-        cur.execute("DELETE FROM purchases WHERE id = ?", (purchase_id,))
-        cur.execute("UPDATE items SET quantity = quantity - ? WHERE id = ?", (quantity, item_id))
+        cur.execute("DELETE FROM purchases WHERE id = %s", (purchase_id,))
+        cur.execute("UPDATE items SET quantity = quantity - %s WHERE id = %s", (quantity, item_id))
         conn.commit()
 
     conn.close()
@@ -204,8 +242,7 @@ def delete_purchase(purchase_id):
 @app.route("/add_purchase", methods=["GET", "POST"])
 @login_required
 def add_purchase():
-    conn = sqlite3.connect('cafe.db')
-    conn.row_factory = sqlite3.Row
+    conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("SELECT id, name FROM items")
@@ -222,18 +259,17 @@ def add_purchase():
         # ユーザー名を一緒に保存
         cur.execute("""
             INSERT INTO purchases (item_id, date, quantity, price, user_name)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
         """, (item_id, input_date, quantity, price, current_user.username))
 
         cur.execute(
-            "UPDATE items SET quantity = quantity + ? WHERE id = ?",
+            "UPDATE items SET quantity = quantity + %s WHERE id = %s",
             (quantity, item_id)
         )
 
         conn.commit()
         conn.close()
 
-        # 通知を出す
         flash(f"{current_user.username} さんが仕入れを登録しました！")
         return redirect(url_for("purchase_history"))
 
@@ -248,9 +284,9 @@ def reset_password():
     if request.method == "POST":
         username = request.form["username"]
         token = secrets.token_hex(16)
-        conn = sqlite3.connect("cafe.db")
+        conn = get_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET reset_token=? WHERE username=?", (token, username))
+        cur.execute("UPDATE users SET reset_token=%s WHERE username=%s", (token, username))
         conn.commit()
         conn.close()
         return f"再設定リンク: <a href='/new_password/{token}'>こちら</a>"
@@ -260,9 +296,9 @@ def reset_password():
 def new_password(token):
     if request.method == "POST":
         new_pass = request.form["password"]
-        conn = sqlite3.connect("cafe.db")
+        conn = get_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET password=?, reset_token=NULL WHERE reset_token=?",
+        cur.execute("UPDATE users SET password=%s, reset_token=NULL WHERE reset_token=%s",
                     (new_pass, token))
         conn.commit()
         conn.close()
@@ -275,9 +311,9 @@ def new_password(token):
 @app.route("/delete_item/<int:item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    conn = sqlite3.connect("cafe.db")
+    conn = get_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM items WHERE id = ?", (item_id,))
+    cur.execute("DELETE FROM items WHERE id = %s", (item_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
@@ -288,13 +324,13 @@ def delete_item(item_id):
 @app.route("/update_quantity/<int:item_id>/<string:action>", methods=["POST"])
 @login_required
 def update_quantity(item_id, action):
-    conn = sqlite3.connect("cafe.db")
+    conn = get_connection()
     cur = conn.cursor()
 
     if action == "plus":
-        cur.execute("UPDATE items SET quantity = quantity + 1 WHERE id = ?", (item_id,))
+        cur.execute("UPDATE items SET quantity = quantity + 1 WHERE id = %s", (item_id,))
     elif action == "minus":
-        cur.execute("UPDATE items SET quantity = quantity - 1 WHERE id = ? AND quantity > 0", (item_id,))
+        cur.execute("UPDATE items SET quantity = quantity - 1 WHERE id = %s AND quantity > 0", (item_id,))
 
     conn.commit()
     conn.close()
@@ -303,5 +339,17 @@ def update_quantity(item_id, action):
 # -----------------------------
 # メイン
 # -----------------------------
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
+    with open("schema.sql", "r", encoding="utf-8") as f:
+        cur.execute(f.read())
+    conn.commit()
+    conn.close()
+
+# 起動時に一度だけ実行
+init_db()
+
 if __name__ == "__main__":
+    init_db()  # ←最初に一度だけテーブルを作る
     app.run(debug=True)
