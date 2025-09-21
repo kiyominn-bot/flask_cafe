@@ -86,3 +86,23 @@ button.minus {
   color: red;
   font-weight: bold;
 }
+.flash-messages {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-size: 1.1em;
+  z-index: 1000;
+  animation: fadeout 5s forwards;
+}
+
+@keyframes fadeout {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; display: none; }
+}

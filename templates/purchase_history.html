@@ -3,9 +3,16 @@
 {% block title %}仕入れ履歴{% endblock %}
 
 {% block content %}
-  <p style="text-align:right;">
-    <a href="/logout">ログアウト</a>
-  </p>
+  <!-- フラッシュメッセージ表示 -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   <h1>過去1か月の仕入れ履歴</h1>
   <table border="1" cellpadding="5">
