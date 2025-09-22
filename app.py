@@ -11,6 +11,13 @@ import secrets
 # -----------------------------
 app = Flask(__name__)
 app.secret_key = "sunabaco"   # 任意の秘密鍵
+# SQLite の絶対パスを指定（PythonAnywhere用）
+DATABASE = "/home/kiyominn/flask_cafe/cafe.db"
+
+def get_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 # 招待コード（初回登録用）
 INVITE_CODE = "sunabaco2025"
