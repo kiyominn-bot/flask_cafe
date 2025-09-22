@@ -64,7 +64,8 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("cafe.db")
+        conn = sqlite3.connect(DATABASE)
+
         try:
             conn.execute("INSERT INTO users (username,password) VALUES (?,?)",
                          (username,password))
@@ -72,7 +73,8 @@ def register():
             conn.close()
 
             # 登録後にそのままログイン状態にする
-            conn = sqlite3.connect("cafe.db")
+            conn = sqlite3.connect(DATABASE)
+
             cur = conn.cursor()
             cur.execute("SELECT id FROM users WHERE username=?", (username,))
             user_id = cur.fetchone()
@@ -119,7 +121,8 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    conn = sqlite3.connect("cafe.db")
+    conn = sqlite3.connect(DATABASE)
+
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute("SELECT * FROM items")
@@ -251,7 +254,8 @@ def reset_password():
     if request.method == "POST":
         username = request.form["username"]
         token = secrets.token_hex(16)
-        conn = sqlite3.connect("cafe.db")
+        conn = sqlite3.connect(DATABASE)
+
         cur = conn.cursor()
         cur.execute("UPDATE users SET reset_token=? WHERE username=?", (token, username))
         conn.commit()
@@ -263,7 +267,8 @@ def reset_password():
 def new_password(token):
     if request.method == "POST":
         new_pass = request.form["password"]
-        conn = sqlite3.connect("cafe.db")
+        conn = sqlite3.connect(DATABASE)
+
         cur = conn.cursor()
         cur.execute("UPDATE users SET password=?, reset_token=NULL WHERE reset_token=?",
                     (new_pass, token))
@@ -278,7 +283,8 @@ def new_password(token):
 @app.route("/delete_item/<int:item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    conn = sqlite3.connect("cafe.db")
+    conn = sqlite3.connect(DATABASE)
+
     cur = conn.cursor()
     cur.execute("DELETE FROM items WHERE id = ?", (item_id,))
     conn.commit()
@@ -291,7 +297,8 @@ def delete_item(item_id):
 @app.route("/update_quantity/<int:item_id>/<string:action>", methods=["POST"])
 @login_required
 def update_quantity(item_id, action):
-    conn = sqlite3.connect("cafe.db")
+    conn = sqlite3.connect(DATABASE)
+
     cur = conn.cursor()
 
     if action == "plus":

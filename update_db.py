@@ -1,7 +1,8 @@
 import sqlite3
 
 # データベースに接続
-conn = sqlite3.connect("cafe.db")
+conn = sqlite3.connect(DATABASE)
+
 cur = conn.cursor()
 
 # purchases テーブルに user_name カラムを追加
