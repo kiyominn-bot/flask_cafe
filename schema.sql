@@ -20,8 +20,10 @@ CREATE TABLE items (
 CREATE TABLE purchases (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id INTEGER,
+    date TEXT,                    -- 追加: 登録日
     quantity INTEGER NOT NULL,     -- 仕入れ数量
-    price INTEGER,                 -- 仕入れ価格（直接入力）
+    price INTEGER,                 -- 仕入れ価格
+    user_name TEXT,                -- 追加: 登録したユーザー名
     purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
 );
