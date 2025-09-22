@@ -74,7 +74,6 @@ def register():
 
             # 登録後にそのままログイン状態にする
             conn = sqlite3.connect(DATABASE)
-
             cur = conn.cursor()
             cur.execute("SELECT id FROM users WHERE username=?", (username,))
             user_id = cur.fetchone()
@@ -97,7 +96,8 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        conn = sqlite3.connect('cafe.db')
+        # ✅ 修正: ここも DATABASE を使う
+        conn = sqlite3.connect(DATABASE)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
@@ -166,12 +166,12 @@ def purchase_history():
     thirty_days_ago = today - datetime.timedelta(days=30)
 
     cur.execute("""
-        SELECT purchases.id, purchases.date, items.name AS item_name, 
+        SELECT purchases.id, purchases.purchased_at, items.name AS item_name, 
                purchases.quantity, purchases.price, items.supplier, purchases.user_name
         FROM purchases
         JOIN items ON purchases.item_id = items.id
-        WHERE purchases.date >= ?
-        ORDER BY purchases.date DESC
+        WHERE purchases.purchased_at >= ?
+        ORDER BY purchases.purchased_at DESC
     """, (thirty_days_ago.isoformat(),))
     records = cur.fetchall()
 
@@ -225,7 +225,7 @@ def add_purchase():
 
         # ユーザー名を一緒に保存
         cur.execute("""
-            INSERT INTO purchases (item_id, date, quantity, price, user_name)
+            INSERT INTO purchases (item_id, purchased_at, quantity, price, user_name)
             VALUES (?, ?, ?, ?, ?)
         """, (item_id, input_date, quantity, price, current_user.username))
 
