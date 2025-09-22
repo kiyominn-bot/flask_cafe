@@ -38,7 +38,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    conn = sqlite3.connect('cafe.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
@@ -122,7 +122,6 @@ def logout():
 @login_required
 def index():
     conn = sqlite3.connect(DATABASE)
-
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute("SELECT * FROM items")
@@ -142,8 +141,7 @@ def add_item():
         unit = request.form["unit"]
         supplier = request.form["supplier"]
         min_quantity = int(request.form["min_quantity"])
-
-        conn = sqlite3.connect('cafe.db')
+        conn = sqlite3.connect(DATABASE)
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO items (name, quantity, unit, supplier, min_quantity) VALUES (?, ?, ?, ?, ?)",
@@ -160,7 +158,7 @@ def add_item():
 @app.route("/purchase_history")
 @login_required
 def purchase_history():
-    conn = sqlite3.connect('cafe.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
@@ -186,7 +184,7 @@ def purchase_history():
 @app.route("/delete_purchase/<int:purchase_id>", methods=["POST"])
 @login_required
 def delete_purchase(purchase_id):
-    conn = sqlite3.connect('cafe.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
@@ -210,7 +208,7 @@ def delete_purchase(purchase_id):
 @app.route("/add_purchase", methods=["GET", "POST"])
 @login_required
 def add_purchase():
-    conn = sqlite3.connect('cafe.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
